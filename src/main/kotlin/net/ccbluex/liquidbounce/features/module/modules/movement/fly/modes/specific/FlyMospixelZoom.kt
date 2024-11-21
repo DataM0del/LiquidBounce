@@ -42,19 +42,28 @@ object FlyMospixelZoom : Choice("MospixelZoom") {
 
 
     private var timer by float("Timer", 2.5f, 1.0f..5.0f)
+    // Base speed, default seems to last an okay amount of time
+    private var baseSpeed by float("BaseSpeed", 0.12f, 0.0f..100f)
+    // Boost speed, seems to be a stable amount
+    private var boostSpeed by float("BoostSpeed", 6.0f, 0.0f..20f)
+    private var decelerationMultiplier by float(
+        "DecelerationMultiplier",
+        0.992f,
+        0.0f..1f
+    )
+    private var stopSpeed by float("StoppedMovingOrCollisionSpeed", 0.12f, 0.0f..1f)
 
     private var ticksEnabled = 0
     private var speed = 0.0
 
     val repeatable = repeatable {
-
         ticksEnabled++
 
         if (!player.moving || player.horizontalCollision) {
             // The player needs to be slowed down if they restart the flying
             // process, therefore if they stop moving or bump into a wall
             // then the default speed needs to be there.
-            speed = 0.12
+            speed = stopSpeed.toDouble()
         }
 
         if (player.isOnGround) {
@@ -69,10 +78,16 @@ object FlyMospixelZoom : Choice("MospixelZoom") {
             }
 
             if (player.age % 10 == 0) {
-                player.setPos(player.x, player.y - 0.001, player.z) // Stops certain fly flags.
+                // Stops certain fly flags.
+                player.setPos(player.x, player.y - 0.001, player.z)
             }
 
-            speed *= 0.992 // The fly needs to decelerate as it goes on
+            // go back down
+            if (player.age % 11 == 0) {
+                player.setPos(player.x, player.y + 0.001, player.z)
+            }
+
+            speed *= decelerationMultiplier.toDouble() // The fly needs to decelerate as it goes on
 
         }
 
@@ -81,9 +96,9 @@ object FlyMospixelZoom : Choice("MospixelZoom") {
     override fun enable() {
 
         ticksEnabled = 0
-        speed = 0.12 // Base speed, seems to last an okay amount of time
+        speed = baseSpeed.toDouble()
         if (player.isOnGround) {
-            speed += sqrt(6.0) // Boost speed, seems to be a stable amount
+            speed += sqrt(boostSpeed.toDouble())
         }
 
         super.enable()
