@@ -66,7 +66,9 @@ object FlyMospixelDamageTimer : Choice("MospixelDamageTimer") {
     override fun enable() {
         ticksEnabled = 0
 
-        val (x, y, z) = player.exactPosition
+        val x = player.exactPosition.x
+        val y = player.exactPosition.y
+        val z = player.exactPosition.z
 
         repeat(65) {
             network.sendPacket(PlayerMoveC2SPacket.PositionAndOnGround(x, y + 0.049, z, false))

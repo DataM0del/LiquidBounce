@@ -31,7 +31,6 @@ import net.ccbluex.liquidbounce.utils.entity.strafe
 import net.ccbluex.liquidbounce.utils.kotlin.Priority
 import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket
 
-
 object FlyMospixelDamageJump : Choice("MospixelDamageJump") {
 
     override val parent: ChoiceConfigurable<*>
@@ -61,14 +60,18 @@ object FlyMospixelDamageJump : Choice("MospixelDamageJump") {
     override fun enable() {
         ticksEnabled = 0
 
-        val (x, y, z) = player.exactPosition
+        // TODO: why isn't component
+        //  destructuring working (it says it's missing the operator function component{2|3})?
+        val x = player.exactPosition.x
+        val y = player.exactPosition.y
+        val z = player.exactPosition.z
 
         repeat(65) {
             network.sendPacket(PlayerMoveC2SPacket.PositionAndOnGround(x, y + 0.049, z, false))
             network.sendPacket(PlayerMoveC2SPacket.PositionAndOnGround(x, y, z, false))
         }
         network.sendPacket(PlayerMoveC2SPacket.PositionAndOnGround(x, y, z, true))
-        
+
         super.enable()
     }
 
