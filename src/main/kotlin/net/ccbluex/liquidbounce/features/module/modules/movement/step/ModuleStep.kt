@@ -20,8 +20,8 @@
  */
 package net.ccbluex.liquidbounce.features.module.modules.movement.step
 
-import net.ccbluex.liquidbounce.config.Choice
-import net.ccbluex.liquidbounce.config.ChoiceConfigurable
+import net.ccbluex.liquidbounce.config.types.Choice
+import net.ccbluex.liquidbounce.config.types.ChoiceConfigurable
 import net.ccbluex.liquidbounce.event.events.MovementInputEvent
 import net.ccbluex.liquidbounce.event.events.PlayerStepEvent
 import net.ccbluex.liquidbounce.event.events.PlayerStepSuccessEvent
@@ -30,9 +30,13 @@ import net.ccbluex.liquidbounce.event.repeatable
 import net.ccbluex.liquidbounce.event.sequenceHandler
 import net.ccbluex.liquidbounce.features.module.Category
 import net.ccbluex.liquidbounce.features.module.Module
+import net.ccbluex.liquidbounce.features.module.modules.movement.speed.ModuleSpeed
 import net.ccbluex.liquidbounce.features.module.modules.render.ModuleDebug
 import net.ccbluex.liquidbounce.utils.client.MovePacketType
+import net.ccbluex.liquidbounce.utils.client.Timer
+import net.ccbluex.liquidbounce.utils.entity.canStep
 import net.ccbluex.liquidbounce.utils.entity.strafe
+import net.ccbluex.liquidbounce.utils.kotlin.Priority
 import net.minecraft.stat.Stats
 
 /**
@@ -43,7 +47,12 @@ import net.minecraft.stat.Stats
 
 object ModuleStep : Module("Step", Category.MOVEMENT) {
 
-    var modes = choices("Mode", Instant, arrayOf(Instant, Legit, Vulcan286)).apply { tagBy(this) }
+    var modes = choices("Mode", Instant, arrayOf(
+        Instant,
+        Legit,
+        Vulcan286,
+        BlocksMC
+    )).apply { tagBy(this) }
 
     object Legit : Choice("Legit") {
         override val parent: ChoiceConfigurable<Choice>
@@ -95,13 +104,15 @@ object ModuleStep : Module("Step", Category.MOVEMENT) {
 
         private var ticksWait = 0
 
-        val repeatable = repeatable {
+        @Suppress("unused")
+        private val tickHandler = repeatable {
             if (ticksWait > 0) {
                 ticksWait--
             }
         }
 
-        val stepHandler = handler<PlayerStepEvent> {
+        @Suppress("unused")
+        private val stepHandler = handler<PlayerStepEvent> {
             if (ticksWait > 0) {
                 return@handler
             }
@@ -109,7 +120,8 @@ object ModuleStep : Module("Step", Category.MOVEMENT) {
             it.height = height
         }
 
-        val stepSuccessEvent = handler<PlayerStepSuccessEvent> { event ->
+        @Suppress("unused")
+        private val stepSuccessEvent = handler<PlayerStepSuccessEvent> { event ->
             val stepHeight = event.adjustedVec.y
 
             ModuleDebug.debugParameter(ModuleStep, "StepHeight", stepHeight)
@@ -162,9 +174,10 @@ object ModuleStep : Module("Step", Category.MOVEMENT) {
         private var stepCounter = 0
         private var stepping = false
 
-        val movementInputHandler = sequenceHandler<MovementInputEvent> {
-            if (player.isOnGround && player.horizontalCollision && !stepping) {
-                it.jumping = true
+        @Suppress("unused")
+        private val movementInputHandler = sequenceHandler<MovementInputEvent> { event ->
+            if (player.canStep(1.0) && !stepping) {
+                event.jumping = true
                 stepCounter++
 
                 stepping = true
@@ -189,6 +202,51 @@ object ModuleStep : Module("Step", Category.MOVEMENT) {
             super.disable()
         }
 
+
+    }
+
+    /**
+     * BlocksMC Step
+     * for 1.9+
+     *
+     * @author @liquidsquid1
+     */
+    object BlocksMC : Choice("BlocksMC") {
+
+        override val parent: ChoiceConfigurable<Choice>
+            get() = modes
+
+        private var baseTimer by float("BaseTimer", 3.0f, 0.1f..5.0f)
+        private var recoveryTimer by float("RecoveryTimer", 0.6f, 0.1f..5.0f)
+
+        var stepping = false
+
+        @Suppress("unused")
+        private val movementInputHandler = sequenceHandler<MovementInputEvent> { event ->
+            if (player.canStep(1.0) && !stepping) {
+                event.jumping = true
+
+                stepping = true
+                Timer.requestTimerSpeed(baseTimer, Priority.IMPORTANT_FOR_USAGE_1, ModuleStep, 3)
+                player.velocity.y = 0.42
+                waitTicks(1)
+                player.velocity.y = 0.33
+                waitTicks(1)
+                player.velocity.y = 0.25
+                waitTicks(2)
+                player.strafe(speed = 0.281)
+                player.velocity.y -= player.y % 1.0
+                Timer.requestTimerSpeed(recoveryTimer, Priority.IMPORTANT_FOR_USAGE_1, ModuleStep, 2)
+                stepping = false
+            }
+        }
+
+        override fun disable() {
+            stepping = false
+            super.disable()
+        }
+
+        override fun isRunning() = super.isRunning() && !ModuleSpeed.enabled
 
     }
 

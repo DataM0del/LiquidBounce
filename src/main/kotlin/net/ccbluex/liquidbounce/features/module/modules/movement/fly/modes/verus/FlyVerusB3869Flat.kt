@@ -21,8 +21,8 @@
 
 package net.ccbluex.liquidbounce.features.module.modules.movement.fly.modes.verus
 
-import net.ccbluex.liquidbounce.config.Choice
-import net.ccbluex.liquidbounce.config.ChoiceConfigurable
+import net.ccbluex.liquidbounce.config.types.Choice
+import net.ccbluex.liquidbounce.config.types.ChoiceConfigurable
 import net.ccbluex.liquidbounce.event.events.BlockShapeEvent
 import net.ccbluex.liquidbounce.event.events.PacketEvent
 import net.ccbluex.liquidbounce.event.events.PlayerJumpEvent
@@ -49,7 +49,7 @@ internal object FlyVerusB3869Flat : Choice("VerusB3896Flat") {
         get() = ModuleFly.modes
 
     val requiresLag
-        get() = this.handleEvents()
+        get() = this.isRunning()
 
     val packetHandler = handler<PacketEvent> { event ->
         val packet = event.packet

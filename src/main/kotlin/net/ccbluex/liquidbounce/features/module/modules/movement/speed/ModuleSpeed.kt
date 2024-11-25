@@ -18,9 +18,9 @@
  */
 package net.ccbluex.liquidbounce.features.module.modules.movement.speed
 
-import net.ccbluex.liquidbounce.config.Choice
-import net.ccbluex.liquidbounce.config.ChoiceConfigurable
-import net.ccbluex.liquidbounce.config.ToggleableConfigurable
+import net.ccbluex.liquidbounce.config.types.Choice
+import net.ccbluex.liquidbounce.config.types.ChoiceConfigurable
+import net.ccbluex.liquidbounce.config.types.ToggleableConfigurable
 import net.ccbluex.liquidbounce.features.module.Category
 import net.ccbluex.liquidbounce.features.module.Module
 import net.ccbluex.liquidbounce.features.module.modules.combat.ModuleCriticals
@@ -29,6 +29,7 @@ import net.ccbluex.liquidbounce.features.module.modules.movement.fly.ModuleFly
 import net.ccbluex.liquidbounce.features.module.modules.movement.speed.modes.SpeedCustom
 import net.ccbluex.liquidbounce.features.module.modules.movement.speed.modes.SpeedLegitHop
 import net.ccbluex.liquidbounce.features.module.modules.movement.speed.modes.SpeedSpeedYPort
+import net.ccbluex.liquidbounce.features.module.modules.movement.speed.modes.blocksmc.SpeedBlocksMC
 import net.ccbluex.liquidbounce.features.module.modules.movement.speed.modes.grim.SpeedGrimCollide
 import net.ccbluex.liquidbounce.features.module.modules.movement.speed.modes.hylex.SpeedHylexGround
 import net.ccbluex.liquidbounce.features.module.modules.movement.speed.modes.hylex.SpeedHylexLowHop
@@ -88,13 +89,15 @@ object ModuleSpeed : Module("Speed", Category.MOVEMENT) {
         SpeedIntave14(configurable),
 
         SpeedHylexLowHop(configurable),
-        SpeedHylexGround(configurable)
+        SpeedHylexGround(configurable),
+
+        SpeedBlocksMC(configurable)
     )
 
     val modes = choices("Mode", 0, this::initializeSpeeds).apply(::tagBy)
 
+    private val notWhileUsingItem by boolean("NotWhileUsingItem", false)
     private val notDuringScaffold by boolean("NotDuringScaffold", true)
-    private val notDuringFly by boolean("NotDuringFly", true)
     private val notWhileSneaking by boolean("NotWhileSneaking", false)
 
     private object OnlyInCombat : ToggleableConfigurable(this, "OnlyInCombat", false) {
@@ -102,7 +105,7 @@ object ModuleSpeed : Module("Speed", Category.MOVEMENT) {
         val modes = choices(this, "Mode", { it.choices[0] },
             ModuleSpeed::initializeSpeeds)
 
-        override fun handleEvents(): Boolean {
+        override fun isRunning(): Boolean {
             // We cannot use our parent super.handleEvents() here, because it has been turned false
             // when [OnlyInCombat] is enabled
             if (!ModuleSpeed.enabled || !enabled || !inGame || !passesRequirements()) {
@@ -110,7 +113,7 @@ object ModuleSpeed : Module("Speed", Category.MOVEMENT) {
             }
 
             // Only On Potion Effect has a higher priority
-            if (OnlyOnPotionEffect.handleEvents()) {
+            if (OnlyOnPotionEffect.isRunning()) {
                 return false
             }
 
@@ -132,7 +135,7 @@ object ModuleSpeed : Module("Speed", Category.MOVEMENT) {
         val modes = choices(this, "Mode", { it.choices[0] },
             ModuleSpeed::initializeSpeeds)
 
-        override fun handleEvents(): Boolean {
+        override fun isRunning(): Boolean {
             // We cannot use our parent super.handleEvents() here, because it has been turned false
             // when [OnlyOnPotionEffect] is enabled
             if (!ModuleSpeed.enabled || !enabled || !inGame || !passesRequirements()) {
@@ -149,10 +152,10 @@ object ModuleSpeed : Module("Speed", Category.MOVEMENT) {
         tree(OnlyOnPotionEffect)
     }
 
-    override fun handleEvents(): Boolean {
+    override fun isRunning(): Boolean {
         // Early return if the module is not ready to be used - prevents accessing player when it's null below
         // in case it was forgotten to be checked
-        if (!super.handleEvents()) {
+        if (!super.isRunning()) {
             return false
         }
 
@@ -161,7 +164,7 @@ object ModuleSpeed : Module("Speed", Category.MOVEMENT) {
         }
 
         // We do not want to handle events if the OnlyInCombat is enabled
-        if (OnlyInCombat.enabled && OnlyInCombat.handleEvents()) {
+        if (OnlyInCombat.enabled && OnlyInCombat.isRunning()) {
             return false
         }
 
@@ -178,7 +181,11 @@ object ModuleSpeed : Module("Speed", Category.MOVEMENT) {
             return false
         }
 
-        if (notDuringScaffold && ModuleScaffold.enabled || notDuringFly && ModuleFly.enabled) {
+        if (notDuringScaffold && ModuleScaffold.enabled || ModuleFly.enabled) {
+            return false
+        }
+
+        if (notWhileUsingItem && mc.player?.isUsingItem == true) {
             return false
         }
 

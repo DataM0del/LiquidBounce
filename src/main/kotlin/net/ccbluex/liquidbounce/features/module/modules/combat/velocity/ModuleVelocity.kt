@@ -55,7 +55,8 @@ object ModuleVelocity : Module("Velocity", Category.COMBAT) {
             VelocityDexland,
             VelocityJumpReset,
             VelocityIntave,
-            VelocityHylex
+            VelocityHylex,
+            VelocityBlocksMC
         )
     ).apply(::tagBy)
 
@@ -104,6 +105,6 @@ object ModuleVelocity : Module("Velocity", Category.COMBAT) {
         }
     }
 
-    override fun handleEvents() = super.handleEvents() && pause == 0
+    override fun isRunning() = super.isRunning() && pause == 0
 
 }

@@ -21,8 +21,8 @@
 
 package net.ccbluex.liquidbounce.features.module.modules.movement.fly.modes.specific
 
-import net.ccbluex.liquidbounce.config.Choice
-import net.ccbluex.liquidbounce.config.ChoiceConfigurable
+import net.ccbluex.liquidbounce.config.types.Choice
+import net.ccbluex.liquidbounce.config.types.ChoiceConfigurable
 import net.ccbluex.liquidbounce.event.events.NotificationEvent
 import net.ccbluex.liquidbounce.event.events.PacketEvent
 import net.ccbluex.liquidbounce.event.handler
@@ -71,7 +71,7 @@ object FlyNcpClip : Choice("NcpClip") {
 
     var shouldLag = false
         private set
-        get() = this.handleEvents() && blink && field
+        get() = this.isRunning() && blink && field
 
     val repeatable = repeatable {
         val startPos = startPosition
