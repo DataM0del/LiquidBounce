@@ -21,6 +21,7 @@ package net.ccbluex.liquidbounce.script.bindings.features
 import net.ccbluex.liquidbounce.config.types.Value
 import net.ccbluex.liquidbounce.event.*
 import net.ccbluex.liquidbounce.event.events.RefreshArrayListEvent
+import net.ccbluex.liquidbounce.event.events.RefreshModuleInArrayListEvent
 import net.ccbluex.liquidbounce.features.module.Category
 import net.ccbluex.liquidbounce.features.module.ClientModule
 import net.ccbluex.liquidbounce.script.PolyglotScript
@@ -38,7 +39,7 @@ class ScriptModule(val script: PolyglotScript, moduleObject: Map<String, Any>) :
     override var tag: String? = null
         set(value) {
             field = value
-            EventManager.callEvent(RefreshArrayListEvent)
+            EventManager.callEvent(RefreshModuleInArrayListEvent(name))
         }
 
     private var _description: String? = null

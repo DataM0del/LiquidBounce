@@ -25,10 +25,7 @@ import net.ccbluex.liquidbounce.config.types.*
 import net.ccbluex.liquidbounce.event.EventListener
 import net.ccbluex.liquidbounce.event.EventManager
 import net.ccbluex.liquidbounce.event.SequenceManager.cancelAllSequences
-import net.ccbluex.liquidbounce.event.events.ModuleActivationEvent
-import net.ccbluex.liquidbounce.event.events.ModuleToggleEvent
-import net.ccbluex.liquidbounce.event.events.NotificationEvent
-import net.ccbluex.liquidbounce.event.events.RefreshArrayListEvent
+import net.ccbluex.liquidbounce.event.events.*
 import net.ccbluex.liquidbounce.features.module.modules.misc.antibot.ModuleAntiBot
 import net.ccbluex.liquidbounce.lang.LanguageManager
 import net.ccbluex.liquidbounce.lang.translation
@@ -153,7 +150,7 @@ open class ClientModule(
         .doNotIncludeWhen { !AutoConfig.includeConfiguration.includeHidden }
         .independentDescription()
         .onChange {
-            EventManager.callEvent(RefreshArrayListEvent)
+            EventManager.callEvent(RefreshModuleInArrayListEvent(name))
             it
         }.apply {
             if (notActivatable) {
@@ -213,7 +210,7 @@ open class ClientModule(
 
         // Refresh arraylist on tag change
         setting.onChanged {
-            EventManager.callEvent(RefreshArrayListEvent)
+            EventManager.callEvent(RefreshModuleInArrayListEvent(name))
         }
     }
 

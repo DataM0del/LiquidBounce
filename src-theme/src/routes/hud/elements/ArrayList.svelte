@@ -1,7 +1,7 @@
 <script lang="ts">
     import {onMount, tick} from "svelte";
     import type {Module} from "../../../integration/types";
-    import {getModules} from "../../../integration/rest";
+    import {getModule, getModules} from "../../../integration/rest";
     import {listen} from "../../../integration/ws";
     import {getTextWidth} from "../../../integration/text_measurement";
     import {flip} from "svelte/animate";
@@ -10,24 +10,46 @@
 
     let enabledModules: Module[] = [];
 
+    function sortByWidth(modules: Module[]): Module[] {
+        return modules.map(m => {
+                let formattedName = $spaceSeperatedNames ? convertToSpacedString(m.name) : m.name;
+                let fullName = m.tag == null ? formattedName : formattedName + " " + m.tag;
+
+                return {
+                    ...m,
+                    width: getTextWidth(fullName, "500 14px Inter")
+                };
+            }
+        ).toSorted((a, b) => b.width - a.width).map(a => { // remove width property because yes
+            a.width = undefined as unknown as number;
+            return a;
+        });
+    }
+
     async function updateEnabledModules() {
         const modules = await getModules();
         const visibleModules = modules.filter(m => m.enabled && !m.hidden);
 
-        const modulesWithWidths = visibleModules.map(module => {
-                let formattedName = $spaceSeperatedNames ? convertToSpacedString(module.name) : module.name;
-                let fullName = module.tag == null ? formattedName : formattedName + " " + module.tag;
-
-                return {
-                    ...module,
-                    width: getTextWidth(fullName, "500 14px Inter")
-                };
+        enabledModules = sortByWidth(visibleModules);
+        await tick();
+    }
+    async function updateModule(modName: string) {
+        const m = await getModule(modName);
+        if (!m.enabled || m.hidden) {
+            const index = enabledModules.indexOf(m);
+            if (index > -1) {
+                enabledModules.splice(index, 1);
             }
-        );
+        }
 
-        modulesWithWidths.sort((a, b) => b.width - a.width);
 
-        enabledModules = modulesWithWidths;
+        const index = enabledModules.indexOf(m);
+        if (index !== -1) {
+            enabledModules.splice(index, 1);
+            enabledModules[index] = m;
+            // this probably gets rid of 50% of the performance boost...
+            enabledModules = sortByWidth(enabledModules);
+        }
         await tick();
     }
 
@@ -45,6 +67,9 @@
 
     listen("refreshArrayList", async () => {
         await updateEnabledModules();
+    });
+    listen("refreshModuleInArrayList", async (modName: string) => {
+        await updateModule(modName);
     });
 </script>
 
