@@ -26,12 +26,14 @@ import net.ccbluex.liquidbounce.features.module.modules.render.*;
 import net.ccbluex.liquidbounce.render.engine.OutlineFramebufferHolder;
 import net.ccbluex.liquidbounce.utils.collection.Pools;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gl.Framebuffer;
 import net.minecraft.client.render.*;
 import net.minecraft.client.render.state.WorldRenderState;
 import net.minecraft.client.util.Handle;
 import net.minecraft.client.util.ObjectAllocator;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.profiler.Profiler;
+import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Vector4f;
 import org.spongepowered.asm.mixin.Final;
@@ -46,6 +48,13 @@ public abstract class MixinWorldRenderer {
     @Shadow
     @Final
     private MinecraftClient client;
+
+    @Shadow
+    protected abstract boolean canDrawEntityOutlines();
+
+    @Shadow
+    @Nullable
+    public abstract Framebuffer getEntityOutlinesFramebuffer();
 
     @Inject(method = "render", at = @At("HEAD"))
     private void onRender(ObjectAllocator allocator, RenderTickCounter tickCounter, boolean renderBlockOutline, Camera camera, Matrix4f positionMatrix, Matrix4f matrix4f, Matrix4f projectionMatrix, GpuBufferSlice fogBuffer, Vector4f fogColor, boolean renderSky, CallbackInfo ci) {
@@ -73,9 +82,30 @@ public abstract class MixinWorldRenderer {
         OutlineFramebufferHolder.drawIfDirty(this.client.getFramebuffer());
     }
 
-    // TODO(1.21.10-port): rendering got moved somewhere else
+    @Inject(method = "drawEntityOutlinesFramebuffer", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gl/Framebuffer;drawBlit(Lcom/mojang/blaze3d/textures/GpuTextureView;)V"))
+    private void onDrawEntityOutlinesFramebuffer(CallbackInfo info) {
+    }
+
 //    @Unique
 //    private boolean isRenderingChams = false;
+//
+//    @Inject(method = "renderEntity", at = @At("HEAD"))
+//    private void injectChamsForEntity(Entity entity, double cameraX, double cameraY, double cameraZ, float tickDelta, MatrixStack matrices, VertexConsumerProvider vertexConsumers, CallbackInfo ci) {
+//        if (ModuleChams.INSTANCE.getRunning() && CombatExtensionsKt.shouldBeAttacked(entity)) {
+//            glEnable(GL_POLYGON_OFFSET_FILL);
+//            glPolygonOffset(1f, -1000000F);
+//
+//            this.isRenderingChams = true;
+//        }
+//    }
+
+//    @Inject(method = "renderEntity", at = @At("RETURN"))
+//    private void injectChamsForEntityPost(Entity entity, double cameraX, double cameraY, double cameraZ, float tickDelta, MatrixStack matrices, VertexConsumerProvider vertexConsumers, CallbackInfo ci) {
+//        if (ModuleChams.INSTANCE.getRunning() && CombatExtensionsKt.shouldBeAttacked(entity) && this.isRenderingChams) {
+//            glPolygonOffset(1f, 1000000F);
+//            glDisable(GL_POLYGON_OFFSET_FILL);
+//        }
+//    }
 
 //    @Inject(method = "renderEntity", at = @At("HEAD"))
 //    private void injectChamsForEntity(Entity entity, double cameraX, double cameraY, double cameraZ, float tickDelta, MatrixStack matrices, VertexConsumerProvider vertexConsumers, CallbackInfo ci) {
@@ -166,7 +196,6 @@ public abstract class MixinWorldRenderer {
 //        OutlineFlag.drawOutline |= event.getDirtyFlag();
 //        Pools.MatStack.recycle(matrixStack);
 //    }
-
 
     // TODO(1.21.10-port): fix this too lol
 //    @ModifyVariable(method = "render", at = @At(

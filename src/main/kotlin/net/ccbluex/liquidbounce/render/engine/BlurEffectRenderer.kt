@@ -39,7 +39,6 @@ import net.ccbluex.liquidbounce.utils.render.clearColor
 import net.ccbluex.liquidbounce.utils.render.clearDepth
 import net.ccbluex.liquidbounce.utils.render.createUbo
 import net.ccbluex.liquidbounce.utils.render.writeStd140
-import net.minecraft.client.MinecraftClient
 import net.minecraft.client.gl.SimpleFramebuffer
 import net.minecraft.client.gui.DrawContext
 import net.minecraft.client.gui.screen.ChatScreen
@@ -86,8 +85,7 @@ object BlurEffectRenderer : MinecraftShortcuts, EventListener {
             this.isDrawingHudFramebuffer = true
             clearOverlay()
 
-            // TODO: GlobalFramebuffer is incompatible with OSX
-            if (!SystemKeycodes.IS_MAC_OS) {
+            if (SystemKeycodes.IS_MAC_OS) {
                 RenderSystem.outputColorTextureOverride = this.overlayFramebuffer.colorAttachmentView
                 RenderSystem.outputDepthTextureOverride = this.overlayFramebuffer.depthAttachmentView
             } else {
@@ -153,7 +151,6 @@ object BlurEffectRenderer : MinecraftShortcuts, EventListener {
         ).use { renderPass ->
             renderPass.setPipeline(ClientRenderPipelines.JCEF.Blit)
             RenderSystem.bindDefaultUniforms(renderPass)
-
             // TODO(1.21.10-port): this probably is wrong
             // renderPass.setVertexBuffer(0, vertexBuffer)
             renderPass.setIndexBuffer(indexBuffer, shapeIndexBuffer.indexType)

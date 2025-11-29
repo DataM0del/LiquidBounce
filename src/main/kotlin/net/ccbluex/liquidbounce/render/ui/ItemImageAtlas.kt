@@ -37,6 +37,7 @@ import net.minecraft.client.gl.SimpleFramebuffer
 import net.minecraft.client.render.DiffuseLighting
 import net.minecraft.client.render.OverlayTexture
 import net.minecraft.client.render.ProjectionMatrix2
+import net.minecraft.client.render.VertexConsumerProvider
 import net.minecraft.client.render.item.KeyedItemRenderState
 import net.minecraft.client.util.BufferAllocator
 import net.minecraft.client.util.math.MatrixStack
@@ -187,32 +188,19 @@ private class ItemTextureRenderer(
         scaledY: Int,
         itemPixelSize: Int,
     ) {
-		matrices.push()
-        val tlY = scaledY.toFloat() + itemPixelSize.toFloat() * 0.5F
+        matrices.push()
         matrices.translate(
             scaledX.toFloat() + itemPixelSize.toFloat() * 0.5F,
-            tlY,
+            scaledY.toFloat() + itemPixelSize.toFloat() * 0.5F,
             0.0f,
         )
         matrices.scale(itemPixelSize.toFloat(), -itemPixelSize.toFloat(), itemPixelSize.toFloat())
-		val bl = !state.isSideLit
-		if (bl) {
-			mc.gameRenderer.diffuseLighting.setShaderLights(DiffuseLighting.Type.ITEMS_FLAT)
-		} else {
-			mc.gameRenderer.diffuseLighting.setShaderLights(DiffuseLighting.Type.ITEMS_3D)
-		}
-
-		RenderSystem.enableScissorForRenderTypeDraws(scaledY,
-            (itemAtlasFramebuffer.textureHeight - tlY).toInt(), scale, scale)
-		state.render(
-            matrices,
-            mc.gameRenderer.entityRenderCommandQueue,
-            15728880,
-            OverlayTexture.DEFAULT_UV,
-            0
+        mc.gameRenderer.diffuseLighting.setShaderLights(
+            if (state.isSideLit) DiffuseLighting.Type.ITEMS_3D else DiffuseLighting.Type.ITEMS_FLAT
         )
-		RenderSystem.disableScissorForRenderTypeDraws()
-		matrices.pop()
+
+        state.render(matrices, mc.gameRenderer.entityRenderCommandQueue, 15728880, OverlayTexture.DEFAULT_UV)
+        matrices.pop()
     }
 
 }
